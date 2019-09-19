@@ -1,7 +1,7 @@
 var gulp = require('gulp');
 var ts = require('gulp-typescript');
 var tsProject = ts.createProject('tsconfig.json');
-
+var streamify = require('gulp-streamify');
 var sourcemaps = require('gulp-sourcemaps');
 var buffer = require('vinyl-buffer');
 var browserify = require('browserify');
@@ -9,6 +9,7 @@ var source = require('vinyl-source-stream');
 var watchify = require('watchify');
 var tsify = require('tsify');
 var fancy_log = require('fancy-log');
+var terser = require('gulp-terser');
 var del = require('del');
 var paths = {
   pages: ['public_html/*.html']
@@ -25,70 +26,67 @@ gulp.task('simple-transpile', function () {
 });
 
 gulp.task('clean', function () {
-  return del(['dist/**']);
+  return del(['dist/**','release/**']);
 });
 
 
 gulp.task('copy-html', function () {
   return gulp.src(paths.pages)
-    .pipe(gulp.dest('dist'));
+    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('release'));
 });
+ 
 
+function mainAppBundle(useDebug) {
 
-function createBrowserify(watch) {
+  var debug;
+  if (!useDebug) {
+    debug = false;
+  } else {
+    debug = true;
+  }
 
-  var bObj = browserify({
+  var mainAppBundler = browserify({
       basedir: '.',
-      debug: true,
+      debug: debug,
       entries: ['src/main.ts'],
       extensions: ['.js'],
       cache: {},
       packageCache: {}
-    })
-    .plugin(tsify)
-    .transform("babelify", {presets: ["@babel/preset-env" ]}) 
+    }).plugin(tsify)
+    .transform("babelify", {
+      presets: ["@babel/preset-env"]
+    });
 
-  if (watch) {
-    bObj = watchify(bObj);
-  }
 
-  return bObj;
+  return mainAppBundler
+    .bundle()
+    .on('error', fancy_log);
 
 }
 
-var watchedBrowserify = createBrowserify(true);
+gulp.task('dev-build', gulp.series(gulp.parallel('copy-html'), function () {
+  return mainAppBundle(true)
 
-
-gulp.task('build', gulp.series(gulp.parallel('copy-html'), function () {
-  return createBrowserify()
-    .bundle()
     .pipe(source('bundle.js'))
-    .pipe(buffer())
-    .pipe(sourcemaps.init({
-      loadMaps: true
-    }))
-    .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest('dist'));
 
 
 }));
 
+gulp.task('prod-build', gulp.series(
+  'dev-build', 'copy-html',
+  function (done) {
 
-function watchBundle() {
 
-  return watchedBrowserify
-    .bundle()
-    .on('error', fancy_log)
-    .pipe(source('bundle.js'))
-    .pipe(buffer())
-    .pipe(sourcemaps.init({
-      loadMaps: true
-    }))
-    .pipe(sourcemaps.write('./'))
-    .pipe(gulp.dest('dist'));
+    var t = gulp.src('./dist/bundle.js')
+      .pipe(terser())
+       
+      .pipe(gulp.dest('./release'))
 
-}
+    done();
+    return t;
 
-gulp.task('watch', gulp.series(gulp.parallel('copy-html'), watchBundle));
-watchedBrowserify.on('update', watchBundle);
-watchedBrowserify.on('log', fancy_log);
+  }
+
+));
