@@ -30,12 +30,17 @@ gulp.task('clean', function () {
 });
 
 
-gulp.task('copy-html', function () {
+gulp.task('copy-html-dev', function () {
   return gulp.src(paths.pages)
-    .pipe(gulp.dest('dist'))
-    .pipe(gulp.dest('release'));
+    .pipe(gulp.dest('dist')) ;
 });
  
+
+gulp.task('copy-html-release', function () {
+  return gulp.src(paths.pages)
+   
+    .pipe(gulp.dest('release'));
+});
 
 function mainAppBundle(useDebug) {
 
@@ -65,7 +70,7 @@ function mainAppBundle(useDebug) {
 
 }
 
-gulp.task('dev-build', gulp.series(gulp.parallel('copy-html'), function () {
+gulp.task('dev-build', gulp.series(gulp.parallel('copy-html-dev'), function () {
   return mainAppBundle(true)
 
     .pipe(source('bundle.js'))
@@ -74,12 +79,21 @@ gulp.task('dev-build', gulp.series(gulp.parallel('copy-html'), function () {
 
 }));
 
-gulp.task('prod-build', gulp.series(
-  'dev-build', 'copy-html',
+gulp.task('release-setup', gulp.series(gulp.parallel('copy-html-release'), function () {
+  return mainAppBundle(false)
+
+    .pipe(source('bundle.js'))
+    .pipe(gulp.dest('release'));
+
+
+}));
+
+gulp.task('release-build', gulp.series(
+  'release-setup', 'copy-html-release',
   function (done) {
 
 
-    var t = gulp.src('./dist/bundle.js')
+    var t = gulp.src('./release/bundle.js')
       .pipe(terser())
        
       .pipe(gulp.dest('./release'))
