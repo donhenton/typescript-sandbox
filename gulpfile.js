@@ -52,6 +52,8 @@ function createBrowserify(watch) {
 
 }
 
+var watchedBrowserify =createBrowserify(true);
+
 
 gulp.task('build', gulp.series(gulp.parallel('copy-html'), function () {
   return createBrowserify()
@@ -60,4 +62,17 @@ gulp.task('build', gulp.series(gulp.parallel('copy-html'), function () {
     .pipe(gulp.dest('dist'));
 }));
 
- 
+
+function watchBundle() {
+
+  return watchedBrowserify
+    .bundle()
+    .on('error', fancy_log)
+    .pipe(source('bundle.js'))
+    .pipe(gulp.dest('dist'));
+
+}
+
+gulp.task('watch', gulp.series(gulp.parallel('copy-html'), watchBundle));
+watchedBrowserify.on('update', watchBundle);
+watchedBrowserify.on('log', fancy_log);
