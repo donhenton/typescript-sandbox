@@ -2,6 +2,8 @@ var gulp = require('gulp');
 var ts = require('gulp-typescript');
 var tsProject = ts.createProject('tsconfig.json');
 
+var sourcemaps = require('gulp-sourcemaps');
+var buffer = require('vinyl-buffer');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var watchify = require('watchify');
@@ -39,10 +41,12 @@ function createBrowserify(watch) {
       basedir: '.',
       debug: true,
       entries: ['src/main.ts'],
+      extensions: ['.js'],
       cache: {},
       packageCache: {}
     })
     .plugin(tsify)
+    .transform("babelify", {presets: ["@babel/preset-env" ]}) 
 
   if (watch) {
     bObj = watchify(bObj);
@@ -52,14 +56,21 @@ function createBrowserify(watch) {
 
 }
 
-var watchedBrowserify =createBrowserify(true);
+var watchedBrowserify = createBrowserify(true);
 
 
 gulp.task('build', gulp.series(gulp.parallel('copy-html'), function () {
   return createBrowserify()
     .bundle()
     .pipe(source('bundle.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init({
+      loadMaps: true
+    }))
+    .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest('dist'));
+
+
 }));
 
 
@@ -69,6 +80,11 @@ function watchBundle() {
     .bundle()
     .on('error', fancy_log)
     .pipe(source('bundle.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init({
+      loadMaps: true
+    }))
+    .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest('dist'));
 
 }
