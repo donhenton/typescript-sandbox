@@ -2,9 +2,14 @@
     "files": [
         "src/main.ts" 
     ],
-    "compilerOptions": {
-        "noImplicitAny": true,
-        "target": "es2015"
+     "compilerOptions": {
+        "noImplicitAny": false,
+        "target": "es2015",
+        "baseUrl": "",
+        "module": "commonjs",
+        "removeComments": false,
+        "preserveConstEnums": true,
+        "sourceMap": true
     }
 }
  
