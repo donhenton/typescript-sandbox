@@ -1,3 +1,3 @@
 export function sayHello(name: string) {
-    return `Hello jojo from ${name}`;
+    return `Hello bonzo from ${name}`;
 }
