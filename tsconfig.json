@@ -6,6 +6,7 @@
         "noImplicitAny": false,
         "target": "es2015",
         "baseUrl": "",
+        "skipLibCheck": true,
         "module": "commonjs",
         "removeComments": false,
         "preserveConstEnums": true,
